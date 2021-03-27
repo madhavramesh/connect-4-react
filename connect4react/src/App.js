@@ -1,22 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useRef, useEffect, useState } from "react";
+import Canvas from "./Canvas";
+import "./App.css";
 
 function App() {
+  const canvasSize = 1000;
+
+  const drawRegionLeft = 200;
+  const drawRegionRight = canvasSize - drawRegionLeft;
+  const drawRegionTop = 300;
+  const drawRegionBottom = canvasSize - 100;
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <Canvas
+          canvasSize={canvasSize}
+          drawRegionLeft={drawRegionLeft}
+          drawRegionRight={drawRegionRight}
+          drawRegionTop={drawRegionTop}
+          drawRegionBottom={drawRegionBottom}
+        ></Canvas>
       </header>
     </div>
   );
