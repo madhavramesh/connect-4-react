@@ -1,4 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
+import { AwesomeButton } from "react-awesome-button";
+import "react-awesome-button/dist/styles.css";
+import Popup from "react-popup";
 
 function Canvas(props) {
   let canvas;
@@ -29,20 +32,22 @@ function Canvas(props) {
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
 
+  const [win, setWin] = useState(false);
+
   const setUp = (ctx) => {
     ctx.fillStyle = defaultColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+    const newChipCoords = chipCoords;
     // prettier-ignore
     for (let i = drawRegionLeft; i <= drawRegionRight; i += (drawRegionRight - drawRegionLeft) / (chipsPerRow - 1)) {
       const row = [];
       for (let j = drawRegionTop; j <= drawRegionBottom; j += (drawRegionBottom - drawRegionTop) / (chipsPerCol - 1)) {
         row.push([i, j, defaultColor]);
       }
-      const newChipCoords = chipCoords;
       newChipCoords.push(row);
-      setChipCoords(newChipCoords);
     }
+    setChipCoords(newChipCoords);
   };
 
   // prettier-ignore
@@ -70,7 +75,6 @@ function Canvas(props) {
   // prettier-ignore
   const drop = (chipColor, clickX, clickY) => {
     const newChipCoords = chipCoords;
-    console.log(newChipCoords);
 
     const newDrawRegionRight = newDrawRegionLeft + w;
     const newDrawRegionBottom = newDrawRegionTop + h;
@@ -79,6 +83,7 @@ function Canvas(props) {
       const leftBoundary = i;
       const rightBoundary = i + (newDrawRegionRight - newDrawRegionLeft) / (chipsPerRow - 1);
       if (clickX >= leftBoundary && clickX < rightBoundary && clickY >= newDrawRegionTop && clickY <= newDrawRegionBottom) {
+        console.log("Click confirmed");
         let col = Math.floor((clickX - newDrawRegionLeft) / w * chipsPerRow);
         let row = chipCoords[col].length - 1;
 
@@ -140,6 +145,73 @@ function Canvas(props) {
     }
   };
 
+  // prettier-ignore
+  const calculateWin = () => {
+    // vertical win
+    for (let i = 0; i < chipCoords.length; i++) {
+      for (let j = 0; j < chipCoords[i].length - 3; j++) {
+        if (chipCoords[i][j][2] === chipCoords[i][j + 1][2]
+        && chipCoords[i][j + 1][2] === chipCoords[i][j + 2][2]
+        && chipCoords[i][j + 2][2] === chipCoords[i][j + 3][2]
+        && chipCoords[i][j][2] !== defaultColor) {
+          setWin(true);
+        }
+      }
+    }
+
+    // horizontal win
+    for (let i = 0; i < chipCoords.length - 3; i++) {
+      for (let j = 0; j < chipCoords[i].length; j++) {
+        if (chipCoords[i][j][2] === chipCoords[i+1][j][2]
+            && chipCoords[i+1][j][2] === chipCoords[i+2][j][2]
+            && chipCoords[i+2][j][2] === chipCoords[i+3][j][2]
+            && chipCoords[i][j][2] !== defaultColor) {
+          setWin(true);
+        }
+      }
+    }
+
+    // descending diagonal
+    for (let i = 3; i < chipCoords.length; i++) {
+      for (let j = 3; j < chipCoords[i].length; j++) {
+        if (chipCoords[i][j][2] === chipCoords[i-1][j-1][2]
+            && chipCoords[i-1][j-1][2] === chipCoords[i-2][j-2][2]
+            && chipCoords[i-2][j-2][2] === chipCoords[i-3][j-3][2]
+            && chipCoords[i][j][2] !== defaultColor) {
+          setWin(true);
+        }
+      }
+    }
+
+    // ascending diagonal
+    for (let i = 0; i < chipCoords.length - 3; i++) {
+      for (let j = 3; j < chipCoords[i].length; j++) {
+        if (chipCoords[i][j][2] === chipCoords[i+1][j-1][2]
+            && chipCoords[i+1][j-1][2] === chipCoords[i+2][j-2][2]
+            && chipCoords[i+2][j-2][2] === chipCoords[i+3][j-3][2]
+            && chipCoords[i][j][2] !== defaultColor) {
+          setWin(true);
+        }
+      }
+    }
+  }
+
+  // prettier-ignore
+  const resetChips = () => {
+    canvas = canvasRef.current;
+    let ctx = canvas.getContext("2d");
+
+    const newChipCoords = chipCoords;
+    for (let i = 0; i < chipCoords.length; i++) {
+      for (let j = 0; j < chipCoords[i].length; j++) {
+        newChipCoords[i][j][2] = defaultColor;
+      }
+    }
+    setChipCoords(newChipCoords);
+    setWin(false);
+    console.log(chipCoords);
+  };
+
   useEffect(() => {
     canvas = canvasRef.current;
     let ctx = canvas.getContext("2d");
@@ -154,7 +226,12 @@ function Canvas(props) {
 
     console.log("Redrawing...");
 
-    drawChips(ctx);
+    if (!win) {
+      drawChips(ctx);
+      calculateWin();
+    } else {
+      console.log("WINNER");
+    }
   }, [drawChips]);
 
   return (
@@ -166,6 +243,9 @@ function Canvas(props) {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
       ></canvas>
+      <AwesomeButton type="primary" onPress={() => resetChips()}>
+        Clear Board
+      </AwesomeButton>
     </div>
   );
 }
