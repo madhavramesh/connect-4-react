@@ -2,11 +2,9 @@ import React, { useRef, useEffect, useState } from "react";
 
 function Canvas(props) {
   let canvas;
-  const canvasSize = props.canvasSize;
+  const canvasWidth = props.canvasWidth;
+  const canvasHeight = props.canvasHeight;
   const canvasRef = useRef(null);
-
-  const [canvasLeftEdge, setCanvasLeftEdge] = useState(0);
-  const [canvasTopEdge, setCanvasTopEdge] = useState(0);
 
   const drawRegionLeft = props.drawRegionLeft;
   const drawRegionRight = props.drawRegionRight;
@@ -14,30 +12,36 @@ function Canvas(props) {
   const drawRegionBottom = props.drawRegionBottom;
 
   const [chipCoords, setChipCoords] = useState([]);
-  const chipsPerRow = 4;
+  const chipsPerRow = 7;
+  const chipsPerCol = 6;
   const chipRad = 50;
 
-  const player1chip = [chipRad + 20, chipRad + 20];
-  const player2chip = [canvasSize - player1chip[0], player1chip[1]];
+  const defaultColor = "#DCDCDC";
+  const redChipColor = "#900000";
+  const yellowChipColor = "#fbec5d";
 
-  const [player1chipIsDown, setPlayer1chipIsDown] = useState(false);
-  const [player2chipIsDown, setPlayer2chipIsDown] = useState(false);
-  const [player1chipDrag, setPlayer1chipDrag] = useState(player1chip);
-  const [player2chipDrag, setPlayer2chipDrag] = useState(player2chip);
+  const newDrawRegionLeft = drawRegionLeft - chipRad - 40;
+  const newDrawRegionTop = drawRegionTop - chipRad - 40;
+  const w = drawRegionRight - drawRegionLeft + 2 * (chipRad + 40);
+  const h = drawRegionBottom - drawRegionTop + 2 * (chipRad + 40);
+
+  const [player, setPlayer] = useState(0);
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
 
   const setUp = (ctx) => {
-    ctx.fillStyle = "#DCDCDC";
-    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    ctx.fillStyle = defaultColor;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     // prettier-ignore
     for (let i = drawRegionLeft; i <= drawRegionRight; i += (drawRegionRight - drawRegionLeft) / (chipsPerRow - 1)) {
-      for (let j = drawRegionTop; j <= drawRegionBottom; j += (drawRegionBottom - drawRegionTop) / (chipsPerRow - 1)) {
-        const newChipCoords = chipCoords;
-        newChipCoords.push([i, j, false]);
-        setChipCoords(newChipCoords);
+      const row = [];
+      for (let j = drawRegionTop; j <= drawRegionBottom; j += (drawRegionBottom - drawRegionTop) / (chipsPerCol - 1)) {
+        row.push([i, j, defaultColor]);
       }
+      const newChipCoords = chipCoords;
+      newChipCoords.push(row);
+      setChipCoords(newChipCoords);
     }
   };
 
@@ -45,24 +49,13 @@ function Canvas(props) {
   const drawBoard = (ctx, color, topLeftX, topLeftY, w, h) => {
     ctx.fillStyle = color;
     ctx.fillRect(topLeftX, topLeftY, w, h);
-
-    for (const coord of chipCoords) {
-      drawChip(ctx, "#DCDCDC", coord[0], coord[1], chipRad);
-    }
   };
 
   const drawChips = (ctx) => {
-    for (const coord of chipCoords) {
-      if (coord[2]) {
-        drawChip(ctx, "#900000", coord[0], coord[1], chipRad);
+    for (const col of chipCoords) {
+      for (const row of col) {
+        drawChip(ctx, row[2], row[0], row[1], chipRad);
       }
-    }
-    drawChip(ctx, "#900000", player1chip[0], player1chip[1]);
-    drawChip(ctx, "#fbec5d", player2chip[0], player2chip[1]);
-    if (player1chipIsDown) {
-      drawChip(ctx, "#900000", player1chipDrag[0], player1chipDrag[1]);
-    } else if (player2chipIsDown) {
-      drawChip(ctx, "#fbec5d", player2chipDrag[0], player2chipDrag[1]);
     }
   };
 
@@ -74,66 +67,82 @@ function Canvas(props) {
     ctx.stroke();
   };
 
-  const dist = (x1, x2, y1, y2) => {
-    return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  // prettier-ignore
+  const drop = (chipColor, clickX, clickY) => {
+    const newChipCoords = chipCoords;
+    console.log(newChipCoords);
+
+    const newDrawRegionRight = newDrawRegionLeft + w;
+    const newDrawRegionBottom = newDrawRegionTop + h;
+
+    for (let i = newDrawRegionLeft; i < newDrawRegionRight; i += (newDrawRegionRight - newDrawRegionLeft) / (chipsPerRow - 1)) {
+      const leftBoundary = i;
+      const rightBoundary = i + (newDrawRegionRight - newDrawRegionLeft) / (chipsPerRow - 1);
+      if (clickX >= leftBoundary && clickX < rightBoundary && clickY >= newDrawRegionTop && clickY <= newDrawRegionBottom) {
+        let col = Math.floor((clickX - newDrawRegionLeft) / w * chipsPerRow);
+        let row = chipCoords[col].length - 1;
+
+        for (let j = 0; j < chipCoords[col].length; j++) {
+          if (chipCoords[col][j][2] !== defaultColor) {
+            row = j - 1;
+            break;
+          }
+        }
+        if (row >= 0) {
+          newChipCoords[col][row][2] = chipColor;
+        }
+      }
+    }
+    setChipCoords(newChipCoords);
+  };
+
+  const mousePosOnCanvas = (x, y) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      x: (x - rect.left) * scaleX,
+      y: (y - rect.top) * scaleY,
+    };
   };
 
   const handleMouseDown = (event) => {
     event.preventDefault();
+    event.stopPropagation();
 
-    setMouseX(parseInt(event.clientX - canvasLeftEdge));
-    setMouseY(parseInt(event.clientY - canvasTopEdge));
-
-    if (dist(player1chip[0], mouseX, player1chip[1], mouseY) < chipRad) {
-      console.log("Chip 1 down");
-      setPlayer1chipIsDown(true);
-    } else if (dist(player2chip[0], mouseX, player2chip[1], mouseY) < chipRad) {
-      console.log("Chip 2 down");
-      setPlayer2chipIsDown(true);
-    }
-  };
-
-  const handleMouseMove = (event) => {
-    if (!player1chipIsDown && !player2chipIsDown) return;
-
-    event.preventDefault();
-
-    const curMouseX = parseInt(event.clientX - canvasLeftEdge);
-    const curMouseY = parseInt(event.clientY - canvasTopEdge);
-    const dx = curMouseX - mouseX;
-    const dy = curMouseY - mouseY;
-    setMouseX(curMouseX);
-    setMouseY(curMouseY);
-
-    if (player1chipIsDown) {
-      setPlayer1chipDrag([player1chipDrag[0] + dx, player1chipDrag[1] + dy]);
-    } else if (player2chipIsDown) {
-      setPlayer2chipDrag([player2chipDrag[0] + dx, player2chipDrag[1] + dy]);
-    }
+    const mousePos = mousePosOnCanvas(event.clientX, event.clientY);
+    setMouseX(mousePos["x"]);
+    setMouseY(mousePos["y"]);
   };
 
   const handleMouseUp = (event) => {
     event.preventDefault();
+    event.stopPropagation();
 
-    setPlayer1chipIsDown(false);
-    setPlayer2chipIsDown(false);
-    setPlayer1chipDrag(player1chip);
-    setPlayer2chipDrag(player2chip);
-  };
+    const curMousePos = mousePosOnCanvas(event.clientX, event.clientY);
+    const curMouseX = curMousePos["x"];
+    const curMouseY = curMousePos["y"];
+    const dx = curMouseX - mouseX;
+    const dy = curMouseY - mouseY;
 
-  const handleMouseOut = (event) => {
-    event.preventDefault();
-    handleMouseUp(event);
+    if (dx > 0.1 || dy > 0.1) {
+      return;
+    }
+
+    if (player === 0) {
+      drop(redChipColor, mouseX, mouseY);
+      setPlayer(1);
+    } else if (player === 1) {
+      drop(yellowChipColor, mouseX, mouseY);
+      setPlayer(0);
+    }
   };
 
   useEffect(() => {
     canvas = canvasRef.current;
     let ctx = canvas.getContext("2d");
-
-    const newDrawRegionLeft = drawRegionLeft - chipRad - 40;
-    const newDrawRegionTop = drawRegionTop - chipRad - 40;
-    const w = drawRegionRight - drawRegionLeft + 2 * (chipRad + 40);
-    const h = drawRegionBottom - drawRegionTop + 2 * (chipRad + 40);
 
     setUp(ctx);
     drawBoard(ctx, "#0099FF", newDrawRegionLeft, newDrawRegionTop, w, h);
@@ -143,23 +152,19 @@ function Canvas(props) {
     canvas = canvasRef.current;
     let ctx = canvas.getContext("2d");
 
-    const rect = canvas.getBoundingClientRect();
-    setCanvasLeftEdge(rect.left);
-    setCanvasTopEdge(rect.top);
+    console.log("Redrawing...");
 
     drawChips(ctx);
-  }, [chipCoords, player1chipDrag, player2chipDrag]);
+  }, [drawChips]);
 
   return (
     <div className="canvas">
       <canvas
         ref={canvasRef}
-        width={canvasSize}
-        height={canvasSize}
+        width={canvasWidth}
+        height={canvasHeight}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseOut={handleMouseOut}
       ></canvas>
     </div>
   );

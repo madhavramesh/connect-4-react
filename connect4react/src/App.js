@@ -3,18 +3,20 @@ import Canvas from "./Canvas";
 import "./App.css";
 
 function App() {
-  const canvasSize = 1000;
+  const canvasWidth = 1400;
+  const canvasHeight = 1000;
 
   const drawRegionLeft = 200;
-  const drawRegionRight = canvasSize - drawRegionLeft;
-  const drawRegionTop = 300;
-  const drawRegionBottom = canvasSize - 100;
+  const drawRegionRight = canvasWidth - drawRegionLeft;
+  const drawRegionTop = 200;
+  const drawRegionBottom = canvasHeight - 100;
 
   return (
     <div className="App">
       <header className="App-header">
         <Canvas
-          canvasSize={canvasSize}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
           drawRegionLeft={drawRegionLeft}
           drawRegionRight={drawRegionRight}
           drawRegionTop={drawRegionTop}
