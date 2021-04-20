@@ -48,19 +48,6 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
-      <option name="arquillianRunConfiguration">
-        <value>
-          <option name="containerStateName" value="" />
-        </value>
-      </option>
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -69,7 +56,13 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1616803595753</updated>
-      <workItem from="1616803596954" duration="28047000" />
+      <workItem from="1616803596954" duration="28095000" />
+      <workItem from="1617172833108" duration="13000" />
+      <workItem from="1617177408119" duration="11000" />
+      <workItem from="1617177433895" duration="14000" />
+      <workItem from="1617177477106" duration="4000" />
+      <workItem from="1617177501964" duration="20000" />
+      <workItem from="1618898323561" duration="376000" />
     </task>
     <servers />
   </component>
@@ -86,6 +79,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
